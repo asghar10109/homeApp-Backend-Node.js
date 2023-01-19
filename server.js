@@ -16,9 +16,6 @@ mongoose
 .then(response => { console.log(`Database Connected Successfully`) } )
 .catch(error => { console.log(`Database Disconnected ${error}`)}  );
 
-
-
-const PORT = process.env.port;
-app.listen(PORT,()=>{
-    console.log(`Server is running on port ${PORT}`);
+app.listen(process.env.PORT,()=>{
+    console.log(`Server is running on port ${process.env.PORT}`);
 });
