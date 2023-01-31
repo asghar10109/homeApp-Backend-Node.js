@@ -25,7 +25,7 @@ const UserSchema = new mongoose.Schema(
       required: true,
     },
     image: {
-      type: String,
+      type: Array,
       required: false,
     },
     otp: {
