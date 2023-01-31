@@ -2,20 +2,22 @@ const User = require('../models/UserModel');
 const CryptoJS = require('crypto-js');
 const jwt = require('jsonwebtoken');
 const mailgun = require("mailgun-js");
+const { get } = require('mongoose');
 const DOMAIN = 'sandboxdec0056748824aa794943b45be2c1283.mailgun.org';
 const mg = mailgun({apiKey:'0a0545928caf383737e9e907d42b0637-f7d687c0-03fe37d3', domain: DOMAIN});
 
 const UserRegisteration = async (req, res, next) => {
     try {
-        const newUser = User({
+        const newUser = new User({
             username: req.body.username,
             email: req.body.email,
+            usertype: req.body.usertype,
             password: CryptoJS.AES.encrypt( req.body.password ,process.env.SECRET_PASSWORD).toString(),
             image: req.body.image,
         })
-
-
+        
         const savedUser = await newUser.save();
+
         res.send({
             message: "Your Data Saved Successfully",
             status: 201,
@@ -23,7 +25,7 @@ const UserRegisteration = async (req, res, next) => {
         })
     } catch (err) {
         res.send({
-            message: "Data Already Exist",
+            message: "Data not Saved",
             status: 404
         })
     }
@@ -34,7 +36,7 @@ const UserRegisteration = async (req, res, next) => {
 const UserLogin = async (req,res) => {
     try {
         const user = await User.findOne({ email: req.body.email});
-        const originalpassword = CryptoJS.AES.decrypt(user.password, process.env.SECRET_PASSWORD).toString(CryptoJS.enc.Utf8)
+        const originalpassword = CryptoJS.AES.decrypt(user.password, process.env.SECRET_PASSWORD).toString(CryptoJS.enc.Utf8);
         if(!user){
             res.send({
                 message:"Invalid Email",
@@ -52,12 +54,12 @@ const UserLogin = async (req,res) => {
                 { 
                 id: user._id,
                 },process.env.JWT_TOKEN , { expiresIn:"2d" })
-
-            const {password,...detail} = user._doc
+            
+            const {token} = user._doc
             res.send({
                 message:"Loggedin Successfully",
                 status:200,
-                data:{detail,access_token}
+                data:{token,access_token}
             })
         }     
     } catch(error){
@@ -146,9 +148,59 @@ const ResetPassword = async (req,res) => {
     }
 }
 
-const checkCM = async (req,res) => {
-    return res.json({message: "working"});
+const UpdatePassword = async (req,res,next) => {
+    try{
+        const Id = req.id
+        const Curr_User = await User.findById(Id);
+        const originalpassword = CryptoJS.AES.decrypt(Curr_User.password, process.env.SECRET_PASSWORD).toString(CryptoJS.enc.Utf8);
+        if(req?.body?.oldPassword !== originalpassword){
+            res.send({
+                message:"Invalid Current Password",
+                status:404
+            })
+            next();
+        }else{
+            try {
+                const pass = CryptoJS.AES.encrypt( req.body.newPassword ,process.env.SECRET_PASSWORD).toString();
+                const Datatoupdate = {password:pass}
+                const PasswordUpdate = await Curr_User.updateOne(Datatoupdate).then(function(dd,data){
+                    if(dd.modifiedCount === 0){
+                        res.json({message:"not Updated"});
+                    }else{
+                        res.json({message:"Password Updated Successfully"});
+                    }
+                });
+            } catch (err) {
+                res.send({message: `Password not updated`});
+            }
+            next();
+        }   
+    }catch(err){
+        res.send({
+            message: `User Not Updated ${err}`,
+            status:404
+        })
+    }
 }
+
+const VerifyRegisteredUser = async (req,res) => {
+    try{
+        const Id =  req.id
+        const verified_User = await User.findById(Id);
+        const { password  , ...details } = verified_User._doc
+        res.send({
+            message:`${details?.username} Logged in Successfully`,
+            status:200,
+            data : {...details}
+        })
+    }catch(err){
+        res.send({
+            message:"Login Failed!",
+            status:404
+        })
+    }
+}
+
 
 module.exports = {
     UserRegisteration,
@@ -156,7 +208,8 @@ module.exports = {
     ForgotPassword,
     OtpCheck,
     ResetPassword,
-    checkCM
+    VerifyRegisteredUser,
+    UpdatePassword
 }
 
 

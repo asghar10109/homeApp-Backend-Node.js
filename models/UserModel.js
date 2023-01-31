@@ -15,6 +15,11 @@ const UserSchema = new mongoose.Schema(
       lowercase:true,
       validate: [ validator, 'Invalid email' ]
     },
+    usertype: {
+      type: String,
+      enum: ['landlord','tenant'],
+      required: true
+    },
     password: {
       type: String,
       required: true,

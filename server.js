@@ -3,14 +3,19 @@ const app = express();
 const cors = require('cors');
 const mongoose = require('mongoose');
 const userRoutes = require('./routes/userRoutes');
+const propertyRoutes = require('./routes/propertyRoutes');
+const propertyTenantRoutes = require('./routes/propertyTenantRoutes');
+const Auth = require("./middlewares/Authentication");
 const dotenv = require("dotenv").config('./');
+const path = require('path');
 
+app.use(express.static(path.join(__dirname + '/public')));
 app.use(express.json());
 app.use(cors());
 app.use('/user/api/',userRoutes);
-
-
-mongoose.set('strictQuery', true);
+app.use('/property/api/',Auth,propertyRoutes);
+app.use('/property/tenant/api/',Auth,propertyTenantRoutes);
+mongoose.set('strictQuery', false);
 mongoose
 .connect(process.env.mongodb_url)
 .then(response => { console.log(`Database Connected Successfully`) } )
