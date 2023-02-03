@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const userRoutes = require('./routes/userRoutes');
 const propertyRoutes = require('./routes/propertyRoutes');
 const propertyTenantRoutes = require('./routes/propertyTenantRoutes');
+const rentaltracking = require('./routes/RentalTrackingRoutes');
 const Auth = require("./middlewares/Authentication");
 const dotenv = require("dotenv").config('./');
 const path = require('path');
@@ -15,6 +16,8 @@ app.use(cors());
 app.use('/user/api/',userRoutes);
 app.use('/property/api/',Auth,propertyRoutes);
 app.use('/property/tenant/api/',Auth,propertyTenantRoutes);
+app.use('/rentaltracking/api/' , rentaltracking);
+
 mongoose.set('strictQuery', false);
 mongoose
 .connect(process.env.mongodb_url)

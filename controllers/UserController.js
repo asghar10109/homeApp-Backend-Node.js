@@ -1,4 +1,5 @@
 const User = require('../models/UserModel');
+
 const CryptoJS = require('crypto-js');
 const jwt = require('jsonwebtoken');
 const mailgun = require("mailgun-js");
@@ -201,6 +202,53 @@ const VerifyRegisteredUser = async (req,res) => {
     }
 }
 
+const SearchUser = async (req,res) => {
+     const name = req.params.username
+    const username = await User.find({username:{ $regex : `${name}` , '$options' : 'i' } });
+    const search = username.map((data) => {
+        const { username , image , ...other} = data;
+        return { Username: username , Avatar : image };
+    })
+
+    console.log(search)
+    res.send({
+        total: search.length,
+        message: `${search.length} User Found`,
+        status:200,
+        data: search
+    })
+}
+
+const ProfileUpdates = async(req,res) => {
+    try{
+        const image = req.body.image;
+        const filename = req.file.path;
+        const files = `${filename}`.replace("public", "");
+        const DataAdd = files.replace(/\\/g, "/") 
+        const Id =  req.id;
+        const updated_User = await User.findByIdAndUpdate(
+            Id ,
+            { $set : {
+                username : req.body.username,
+                email : req.body.email,
+                usertype : req.body.usertype,
+                image : `${DataAdd.replace("/userimage", "")}`,
+            }} ,
+            {new : true}
+        )
+
+        res.send({
+            message:`${updated_User.username} Profile Updated Successfully`,
+            status:201,
+            data : updated_User
+        })
+    }catch(err){
+        res.send({
+            message:`Profile Not Updated`,
+            status:204
+        })
+    }
+}
 
 module.exports = {
     UserRegisteration,
@@ -209,7 +257,9 @@ module.exports = {
     OtpCheck,
     ResetPassword,
     VerifyRegisteredUser,
-    UpdatePassword
+    UpdatePassword,
+    SearchUser,
+    ProfileUpdates
 }
 
 
