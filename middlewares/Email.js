@@ -1,6 +1,6 @@
 const nodemailer = require("nodemailer");
 
-const sendEmail = async (email, subject, random) => {
+const sendEmail = async (name ,email, subject, random) => {
     try {
         const transporter = nodemailer.createTransport({
             host: process.env.HOST,
@@ -17,6 +17,7 @@ const sendEmail = async (email, subject, random) => {
             to: email,
             subject: subject,
             html:`
+            <h1>Hi ${name}</h1>
             <h2>Reset Password OTP</h2>
             <h3 style={{color:"green"}}>${random}</h3>            
             `

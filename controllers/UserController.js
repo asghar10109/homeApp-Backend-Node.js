@@ -85,8 +85,8 @@ const ForgotPassword = async (req,res,next) => {
             if(err){
                 return res.status(400).json({error: "OTP error"});
             }else{
-               
-                 const data = sendEmail(email,subject,random)
+                const name = user.username
+                 const data = sendEmail(name,email,subject,random)
                  return res.send({message:"Email send Successfully"})
                  
             }
