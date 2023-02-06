@@ -6,7 +6,7 @@ const mailgun = require("mailgun-js");
 const { get } = require('mongoose');
 const DOMAIN = 'sandboxdec0056748824aa794943b45be2c1283.mailgun.org';
 const mg = mailgun({apiKey:'0a0545928caf383737e9e907d42b0637-f7d687c0-03fe37d3', domain: DOMAIN});
-
+const sendEmail = require('../middlewares/Email');
 const UserRegisteration = async (req, res, next) => {
     try {
         const newUser = new User({
@@ -70,38 +70,27 @@ const UserLogin = async (req,res) => {
         })
     }
 }
-const ForgotPassword = async (req,res) => {
+const ForgotPassword = async (req,res,next) => {
     const {email} = req.body;
 
-    User.findOne({email}, (err, user) => {
+    User.findOne({email}, async (err, user) => {
         if(err || !user){
             return res.status(400).json({error: "User with this email does not exist"});
         }
-        var random = Math.floor(Math.random() * 1000000);
-        const data = {
-            from: 'HomeApp <noreplay@gmail.com>',
-            to: email,
-            subject: 'Reset Password',
-            html:`
-                <h2>Reset Password OTP</h2>
-                <h3>${random}</h3>            
-            `
-        };
+
+        const random = Math.floor(Math.random() * 1000000);
+        const subject = "Reset Password OTP"
+
         return user.updateOne({otp:random},function(err,success){
             if(err){
                 return res.status(400).json({error: "OTP error"});
             }else{
-                mg.messages().send(data, function (error, body) {
-                    if(error) {
-                        return res.json({
-                            error: error.message
-                            // error: "Email not sent"
-                        })
-                    }
-                    return res.json({message: "Email has been sent"});
-                });
+               
+                 const data = sendEmail(email,subject,random)
+                 return res.send({message:"Email send Successfully"})
+                 
             }
-        });
+        }).clone();
     })
 }
 

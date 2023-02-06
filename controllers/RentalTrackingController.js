@@ -1,7 +1,8 @@
 const Rent_Tracking = require('../models/RentalTrackingModel');
 const nodeCron = require("node-cron");
 const PropertyTenant = require('../models/PropertyTenantModel');
-const User = require('../models/UserModel');
+var mongoose = require('mongoose');
+
 
 const Rent_Tracking_Up_todate = async (req,res,next ) => {
     // Getting data with PropertyTenant collection start here
@@ -44,9 +45,9 @@ const Rent_Tracking_Up_todate = async (req,res,next ) => {
     })
 }
 
-
- nodeCron.schedule( '0 0 1-15 * *' ,Rent_Tracking_Up_todate ,null,true);
-
+// cron job code start here
+ nodeCron.schedule( '0 0 1-15 * *' ,Rent_Tracking_Up_todate ,null,true,"Asia/Kolkata" );
+// cron job code end here
 
 const Rental_Tracking_Updates_Get = async (req,res) => {
 
@@ -72,6 +73,8 @@ const Rental_Tracking_Updates_Get = async (req,res) => {
     const date = data.propertyTenant_id.date;
     return { _id : data._id , User_Data , date  }
    })
+   
+
    const Data1 = [...new Set(Property_Data)]
    const Data2 = [...new Set(User_data)]
 
@@ -84,7 +87,79 @@ const Rental_Tracking_Updates_Get = async (req,res) => {
 
 }
 
+
+const For_Each_User_Info = async (req,res) => {
+
+    const Id = req.params.id;
+    const P_id = req.query.P_id;
+    const U_id = req.query.U_id;
+    
+    var property_Id = mongoose.Types.ObjectId(`${P_id}`);
+    var user_Id = mongoose.Types.ObjectId(`${U_id}`);
+    var propertyTenant = mongoose.Types.ObjectId(`${Id}`);
+    
+    console.log(P_id , property_Id)
+
+    const agg = [
+        {
+          '$match': {
+            'propertyTenant_id': propertyTenant
+          }
+        }, {
+          '$lookup': {
+            'from': 'propertytenants', 
+            'localField': 'propertyTenant_id', 
+            'foreignField': '_id', 
+            'as': 'result'
+          }
+        }, {
+          '$unwind': {
+            'path': '$result'
+          }
+        }, {
+          '$match': {
+            'result.property_id': property_Id, 
+            'result.userid': user_Id
+          }
+        }, {
+          '$lookup': {
+            'from': 'properties', 
+            'localField': 'result.property_id', 
+            'foreignField': '_id', 
+            'as': 'property'
+          }
+        }, {
+          '$lookup': {
+            'from': 'users', 
+            'localField': 'result.userid', 
+            'foreignField': '_id', 
+            'as': 'user'
+          }
+        }, {
+          '$unwind': {
+            'path': '$property'
+          }
+        }, {
+          '$unwind': {
+            'path': '$user'
+          }
+        }, {
+          '$sort': {
+            'property.date': -1
+          }
+        }
+      ]
+
+      const Data = await Rent_Tracking.aggregate(agg)
+      res.send({
+        message:"Data Fetched",
+        status:200,
+        data:Data
+      })
+}
+
 module.exports = {
     Rent_Tracking_Up_todate,
-    Rental_Tracking_Updates_Get
+    Rental_Tracking_Updates_Get,
+    For_Each_User_Info
 }
