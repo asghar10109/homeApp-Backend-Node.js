@@ -98,8 +98,6 @@ const For_Each_User_Info = async (req,res) => {
     var user_Id = mongoose.Types.ObjectId(`${U_id}`);
     var propertyTenant = mongoose.Types.ObjectId(`${Id}`);
     
-    console.log(P_id , property_Id)
-
     const agg = [
         {
           '$match': {
