@@ -51,39 +51,61 @@ const Rent_Tracking_Up_todate = async (req,res,next ) => {
 
 const Rental_Tracking_Updates_Get = async (req,res) => {
 
-    const GetRentalData = await Rent_Tracking.find()
-    .populate({
-        path :'propertyTenant_id' , 
-        populate:{ path:'property_id'}
+ const agg = [
+    {
+      '$lookup': {
+        'from': 'propertytenants', 
+        'localField': 'propertyTenant_id', 
+        'foreignField': '_id', 
+        'as': 'result'
+      }
+    }, {
+      '$unwind': {
+        'path': '$result'
+      }
+    }, {
+      '$lookup': {
+        'from': 'properties', 
+        'localField': 'result.property_id', 
+        'foreignField': '_id', 
+        'as': 'Property_data'
+      }
+    }, {
+      '$unwind': {
+        'path': '$Property_data'
+      }
+    }, {
+      '$lookup': {
+        'from': 'users', 
+        'localField': 'result.userid', 
+        'foreignField': '_id', 
+        'as': 'Users_data'
+      }
+    }, {
+      '$unwind': {
+        'path': '$Users_data'
+      }
+    }, {
+      '$sort': {
+        'createdAt': -1
+      }
+    }
+  ]
+
+    const Data = await Rent_Tracking.aggregate(agg)
+    
+    
+    const FinalData = Data.map((data) => {
+      const { _id , propertyTenant_id, __v  , result , ...CompleteDetails } = data
+      return CompleteDetails;
     })
-    const GetRentalData2 = await Rent_Tracking.find()
-    .populate({
-        path :'propertyTenant_id' , 
-        populate:{ path:'userid'}
+
+    res.send({
+      total: FinalData.length,
+      message: `${FinalData.length} Record Fetch Successfully`,
+      status:200,
+      data: FinalData
     })
-
-
-   const Property_Data = GetRentalData.map(data => {
-       const property = data?.propertyTenant_id?.property_id;
-       return property
-   })
-
-   const User_data = GetRentalData2.map((data) => {
-    const User_Data = data.propertyTenant_id.userid;
-    const date = data.propertyTenant_id.date;
-    return { _id : data._id , User_Data , date  }
-   })
-   
-
-   const Data1 = [...new Set(Property_Data)]
-   const Data2 = [...new Set(User_data)]
-
-   res.send({
-    message: `${Data2.length} Users Record Fetch and ${Data1.length} Properties Record Fetch Successfully `,
-    status:200,
-    data: { Property : Data1 , User : Data2}
-   })
- 
 
 }
 
