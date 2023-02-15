@@ -102,43 +102,118 @@ const GetProperties = async (req, res, next) => {
     try {
         const Id = req.id;
         const userProperties = await Property.find({ userid: Id });
-        if (userProperties) {
+        let NodeList = [];
+        for (var i = 0; i < userProperties.length; i++) {
+            const { _id, username, userid, location, rent, date, description, bedroom, bathroom, area, images } = userProperties[i];
+            const fetching = await ProPertyTent.find({ property_id: userProperties[i]._id });
+            const tenant = [];
+            for (let index = 0; index < fetching.length; index++) {
+                tenant.push(await User.findById(fetching[index].userid));
+            }
+            NodeList.push({
+                id: _id,
+                title: username,
+                landlord: await User.findById(userProperties[i].userid),
+                tenants: tenant,
+                location: location,
+                rent: rent,
+                date: date,
+                description: description,
+                bedroom: bedroom,
+                bathroom: bathroom,
+                area: area,
+                images: images
+            });
+        }
+
+        if (NodeList.length > 0) {
             res.send({
+                message: "Data Fetched",
                 status: 200,
-                data: userProperties
+                data: NodeList,
             });
         } else {
             res.send({
                 message: "Data Not Found",
-                status: 404
+                status: 404,
+                data: [],
             })
         }
     } catch (err) {
         res.json({
             message: err,
-            status: 503
+            status: 503,
+            data: [],
+        })
+    }
+}
+
+const GetTenantProperties = async (req, res, next) => {
+    try {
+        const Id = req.id;
+        const tenantproperties = await ProPertyTent.find({ userid: Id });
+
+        let NodeList = [];
+        for (var i = 0; i < tenantproperties.length; i++) {
+            const { property_id } = tenantproperties[i];
+            const userProperties = await Property.findById(property_id);
+            const { username, userid, location, rent, date, description, bedroom, bathroom, area, images } = userProperties;
+            NodeList.push({
+                id: property_id,
+                title: username,
+                landlord: await User.findById(userid),
+                tenants: [await User.findById(Id)],
+                location: location,
+                rent: rent,
+                date: date,
+                description: description,
+                bedroom: bedroom,
+                bathroom: bathroom,
+                area: area,
+                images: images
+            });
+        }
+
+        if (NodeList.length > 0) {
+            res.send({
+                message: "Data Fetched",
+                status: 200,
+                data: NodeList,
+            });
+        } else {
+            res.send({
+                message: "Data Not Found",
+                status: 404,
+                data: [],
+            })
+        }
+    } catch (err) {
+        res.json({
+            message: err,
+            status: 503,
+            data: [],
         })
     }
 }
 
 const Properties_Details = async (req, res, next) => {
     const Id = req.params.pid;
-    
+
     const Pro_Details = await Property.find({ _id: Id });
     const prop_data = Pro_Details.map(data => data._id.toString())
-    
+
     const Property_details = await ProPertyTent
-    .find({property_id : prop_data})
-    .populate({path:'userid' , select:'_id username image'} )
-    .populate({path:'property_id' , select:' description location -_id bedroom bathroom area rent'});
+        .find({ property_id: prop_data })
+        .populate({ path: 'userid', select: '_id username image' })
+        .populate({ path: 'property_id', select: ' description location -_id bedroom bathroom area rent' });
 
     const totals = Property_details.map(data => data?.userid)
     console.log(totals)
 
     res.send({
-        total:`Total No of Users ${totals.length}`,
-        message:"Data Fetch Successfully",
-        status:200,
+        total: `Total No of Users ${totals.length}`,
+        message: "Data Fetch Successfully",
+        status: 200,
         data: Property_details
     })
 
@@ -149,7 +224,8 @@ module.exports = {
     PropertyUpdate,
     GetProperties,
     SendAttachment,
-    Properties_Details
+    Properties_Details,
+    GetTenantProperties
 }
 
 
