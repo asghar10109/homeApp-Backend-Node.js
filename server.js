@@ -7,6 +7,7 @@ const userRoutes = require("./routes/userRoutes");
 const propertyRoutes = require("./routes/propertyRoutes");
 const propertyTenantRoutes = require("./routes/propertyTenantRoutes");
 const rentaltracking = require("./routes/RentalTrackingRoutes");
+const maintenanceRoutes = require("./routes/maintenanceRoutes");
 const Auth = require("./middlewares/Authentication");
 const dotenv = require("dotenv").config("./");
 const path = require("path");
@@ -18,7 +19,8 @@ app.use(cors());
 app.use("/user/api/", userRoutes);
 app.use("/property/api/", Auth, propertyRoutes);
 app.use("/property/tenant/api/", Auth, propertyTenantRoutes);
-app.use("/rentaltracking/api/", rentaltracking);
+app.use("/rentaltracking/api/",Auth, rentaltracking);
+app.use("/maintenance/api/",Auth, maintenanceRoutes);
 
 iniateSockets(server);
 
