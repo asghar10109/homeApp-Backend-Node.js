@@ -16,19 +16,22 @@ function iniateSockets(server) {
   io.on("connection", (socket) => {
     console.log("connection");
 
-    socket.on("send-message", (message) => {
-      const msg = message;
-      Stringy;
-      console.log("====================================");
-      console.log(`Message: ${msg}`);
-      console.log("====================================");
+    socket.on("send-message", async (message) => {
+      try {
+        const value = JSON.parse(message);
+        if (value.conv_id) {
+          const { message, sender_id, receiver_id, conv_id } = value;
+          const savedChat = await addMessage(message, sender_id, receiver_id, conv_id);
+          socket.emit(receiver_id, toString(), savedChat);
+        }
+      } catch (error) {
+        console.log("send-message Error:" + error);
+      }
     });
 
     socket.on("disconnect", (message) => {
       console.log("Disconnect");
     });
-
-    socket.on("", (message) => {});
   });
 
   io.on("connect_error", (err) => {
@@ -36,4 +39,128 @@ function iniateSockets(server) {
   });
 }
 
-module.exports = iniateSockets;
+async function addMessage(message, sender_id, receiver_id, conv_id) {
+
+  const chatMessage = new Chat({
+    message: message,
+    sender_id: sender_id,
+    receiver_id: receiver_id,
+    conv_id: conv_id
+  });
+
+  const savedChat = await chatMessage.save();
+
+  return savedChat;
+}
+
+const getMessages = async (req, res, next) => {
+  try {
+    const Id = req.id;
+    const conv_id = req.body.fconv_id;
+    const messageList = await Chat.find({ conv_id: conv_id });
+    let response = [];
+    for (var i = 0; i < messageList.length; i++) {
+      let sender = false;
+      const { _id, receiver_id, sender_id, createdAt } = messageList[i];
+      if (sender_id == Id) {
+        sender = true;
+      }
+      response.push({
+        id: _id,
+        sender: sender,
+        receiverData: await User.findById(receiver_id),
+        senderData: await User.findById(sender_id),
+        time: createdAt
+      })
+    }
+    if (response) {
+      res.send({
+        message: "Data Fetched Successfully",
+        status: 200,
+        data: response
+      });
+    } else {
+      res.send({
+        message: "Data Not Found",
+        status: 204,
+        data: []
+      });
+    }
+  } catch (error) {
+    res.send({
+      message: "Error: " + error,
+      status: 404,
+      data: []
+    });
+  }
+}
+
+const getChats = async (req, res, next) => {
+  try {
+    const Id = req.id;
+    const convo = await Conv.find({ Users: Id });
+    let response = [];
+    for (var i = 0; i < convo.length; i++) {
+      const { _id, Users } = convo[i];
+      let index = 0;
+      if (Users[0] == Id) {
+        index = 1;
+      } else {
+        index = 0;
+      }
+      response.push({
+        id: _id,
+        user: await User.findById(Users[index])
+      });
+    }
+    if (response) {
+      res.send({
+        message: "Your Data Fetched Successfully",
+        status: 200,
+        data: response,
+      });
+    } else {
+      res.send({
+        message: "Data not Found",
+        status: 201,
+        data: []
+      });
+    }
+  } catch (err) {
+    res.send({
+      message: "Error:" + err,
+      status: 404,
+    });
+  }
+}
+
+const createConv = async (req, res, next) => {
+  try {
+    const Id = req.id;
+    const userid = req.body.userid;
+    const convo = new Conv({
+      Users: [
+        Id, userid
+      ]
+    });
+    const savedConv = await convo.save();
+
+    res.send({
+      message: "Your Data Saved Successfully",
+      status: 201,
+      data: savedConv,
+    });
+  } catch (err) {
+    res.send({
+      message: "Data not Saved",
+      status: 404,
+    });
+  }
+}
+
+module.exports = {
+  iniateSockets,
+  createConv,
+  getMessages,
+  getChats
+};

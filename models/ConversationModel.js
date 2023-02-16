@@ -2,11 +2,11 @@ const mongoose = require("mongoose");
 
 const ConvSchema = new mongoose.Schema(
   {
-    Users: {
+    Users: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-    },
+    }],
   },
   { timestamps: true }
 );

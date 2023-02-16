@@ -7,14 +7,16 @@ const userRoutes = require("./routes/userRoutes");
 const propertyRoutes = require("./routes/propertyRoutes");
 const propertyTenantRoutes = require("./routes/propertyTenantRoutes");
 const rentaltracking = require("./routes/RentalTrackingRoutes");
+const chatRoutes = require('./routes/chatRoutes');
 const Auth = require("./middlewares/Authentication");
 const dotenv = require("dotenv").config("./");
 const path = require("path");
-const iniateSockets = require("./controllers/ChatController");
+const { iniateSockets } = require("./controllers/ChatController");
 
 app.use(express.static(path.join(__dirname + "/public")));
 app.use(express.json());
 app.use(cors());
+app.use("/chat/api/", chatRoutes)
 app.use("/user/api/", userRoutes);
 app.use("/property/api/", Auth, propertyRoutes);
 app.use("/property/tenant/api/", Auth, propertyTenantRoutes);
