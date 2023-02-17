@@ -47,9 +47,9 @@ const CreateMaintenance = async (req,res,next) => {
 
 const GetAllMaintenance = async (req,res,next) => {
     const Id = req.id;
-    const data = await Maintenance.find({userid: Id});
+    const data = await Maintenance.find({userid: Id}).populate({ path:'userid' , select:'_id username email image'});
     res.send({
-        message: `${data.length} Record Found of Teant`,
+        message: `${data.length} Record Found of Landlord`,
         status:200,
         data: data
     })
@@ -59,7 +59,7 @@ const GetSpecficTenant = async (req,res,next) => {
     const tenantid = req.params.id;
     const Id = req.id;
     
-    const PropertyData = await Maintenance.find({propertyid : tenantid , userid : Id}).populate('userid')
+    const PropertyData = await Maintenance.find({propertyid : tenantid , userid : Id}).populate({ path:'userid' , select:'_id username email image'})
     
    
      PropertyData.map(data => {
